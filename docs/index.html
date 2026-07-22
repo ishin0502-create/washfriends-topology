@@ -138,12 +138,17 @@ body{font-family:-apple-system,'Pretendard',system-ui,'Segoe UI',sans-serif;back
 
 /* ── TOPOLOGY (SVG) VIEW ── */
 .topo-view{position:relative;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.topo-svg{width:100%;height:600px;display:block}
-.topo-node{cursor:pointer;transition:opacity .15s}
-.topo-node rect{transition:all .15s}
-.topo-node:hover rect{filter:brightness(1.4)}
-.topo-edge{stroke-width:1;fill:none;opacity:.2;transition:opacity .15s}
-.topo-edge.highlight{opacity:.7;stroke-width:1.5}
+.topo-svg{width:100%;display:block}
+.topo-node{cursor:pointer;transition:opacity .25s}
+.topo-node circle{transition:all .2s}
+.topo-node:hover circle{filter:brightness(1.5);stroke-width:3}
+.topo-node text{pointer-events:none}
+.topo-edge{fill:none;transition:opacity .25s,stroke-width .15s}
+.topo-edge.highlight{stroke-width:2.5!important}
+.topo-legend{font-family:-apple-system,system-ui,sans-serif}
+.topo-controls{position:absolute;top:12px;right:12px;display:flex;gap:6px}
+.topo-ctrl-btn{padding:5px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s}
+.topo-ctrl-btn:hover{background:var(--surface-3);color:var(--text-1)}
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
@@ -517,97 +522,215 @@ function renderCards(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// TOPOLOGY (SVG) VIEW
+// TOPOLOGY (NETWORK MAP) VIEW — Force-directed Spider-web
 // ═══════════════════════════════════════════════════════════════════════
+function edgeStatusColor(e){
+  const fn=N.find(n=>n.id===e.from), tn=N.find(n=>n.id===e.to);
+  if(!fn||!tn) return '#555';
+  if(e.type==='planned') return '#3b82f6';
+  const worst=[fn.status,tn.status];
+  if(worst.includes('critical')||worst.includes('serious')) return '#ef4444';
+  if(worst.includes('warning')) return '#eab308';
+  return '#22c55e';
+}
+function edgeStatusOpacity(e){
+  if(e.type==='planned') return 0.25;
+  const fn=N.find(n=>n.id===e.from), tn=N.find(n=>n.id===e.to);
+  if(!fn||!tn) return 0.15;
+  const worst=[fn.status,tn.status];
+  if(worst.includes('critical')||worst.includes('serious')) return 0.7;
+  if(worst.includes('warning')) return 0.5;
+  return 0.35;
+}
+
+function forceLayout(nodes,edges,W,H,iterations){
+  // Initialize positions in group clusters
+  const groups={};
+  nodes.forEach(n=>{if(!groups[n.group])groups[n.group]=[];groups[n.group].push(n)});
+  const gKeys=Object.keys(groups);
+  const cx=W/2,cy=H/2,baseR=Math.min(W,H)*0.34;
+  const pos=new Map();
+
+  gKeys.forEach((gk,gi)=>{
+    const ga=(gi/gKeys.length)*Math.PI*2-Math.PI/2;
+    const gcx=cx+Math.cos(ga)*baseR;
+    const gcy=cy+Math.sin(ga)*baseR;
+    const ns=groups[gk];
+    const subR=Math.min(baseR*0.28,ns.length*16);
+    ns.forEach((n,ni)=>{
+      const a=(ni/ns.length)*Math.PI*2-Math.PI/2;
+      const r=ns.length<=1?0:subR;
+      pos.set(n.id,{x:gcx+Math.cos(a)*r,y:gcy+Math.sin(a)*r,vx:0,vy:0});
+    });
+  });
+
+  // Simple force simulation
+  const PAD=40;
+  for(let iter=0;iter<iterations;iter++){
+    const alpha=1-iter/iterations;
+    const repulse=800*alpha;
+    const attract=0.008*alpha;
+    const groupPull=0.03*alpha;
+
+    // Group center gravity
+    for(const[gk,ns] of Object.entries(groups)){
+      let gx=0,gy=0;
+      ns.forEach(n=>{const p=pos.get(n.id);gx+=p.x;gy+=p.y});
+      gx/=ns.length;gy/=ns.length;
+      ns.forEach(n=>{
+        const p=pos.get(n.id);
+        p.vx+=(gx-p.x)*groupPull;
+        p.vy+=(gy-p.y)*groupPull;
+      });
+    }
+
+    // Repulsion between all nodes
+    const nArr=[...pos.entries()];
+    for(let i=0;i<nArr.length;i++){
+      for(let j=i+1;j<nArr.length;j++){
+        const [,a]=nArr[i],[,b]=nArr[j];
+        let dx=b.x-a.x,dy=b.y-a.y;
+        let d2=dx*dx+dy*dy;
+        if(d2<1)d2=1;
+        const d=Math.sqrt(d2);
+        const f=repulse/d2;
+        const fx=dx/d*f,fy=dy/d*f;
+        a.vx-=fx;a.vy-=fy;
+        b.vx+=fx;b.vy+=fy;
+      }
+    }
+
+    // Edge attraction
+    edges.forEach(e=>{
+      const a=pos.get(e.from),b=pos.get(e.to);
+      if(!a||!b)return;
+      const dx=b.x-a.x,dy=b.y-a.y;
+      const d=Math.sqrt(dx*dx+dy*dy)||1;
+      const ideal=120;
+      const f=(d-ideal)*attract;
+      const fx=dx/d*f,fy=dy/d*f;
+      a.vx+=fx;a.vy+=fy;
+      b.vx-=fx;b.vy-=fy;
+    });
+
+    // Center gravity
+    for(const[,p] of pos){
+      p.vx+=(cx-p.x)*0.002*alpha;
+      p.vy+=(cy-p.y)*0.002*alpha;
+    }
+
+    // Apply velocity with damping
+    for(const[,p] of pos){
+      p.vx*=0.6;p.vy*=0.6;
+      p.x+=p.vx;p.y+=p.vy;
+      p.x=Math.max(PAD,Math.min(W-PAD,p.x));
+      p.y=Math.max(PAD,Math.min(H-PAD,p.y));
+    }
+  }
+  return pos;
+}
+
 function renderTopology(){
   const main=document.getElementById('main');
   const filtered=getFilteredNodes();
   const W=main.clientWidth-48;
-  const H=Math.max(600,window.innerHeight-120);
-  const groups={};
-  filtered.forEach(n=>{if(!groups[n.group])groups[n.group]=[];groups[n.group].push(n)});
-  const gKeys=Object.keys(groups);
-  const positions=new Map();
-  const cx=W/2,cy=H/2;
-  const baseR=Math.min(W,H)*0.36;
-  const nodeW=120,nodeH=42;
+  const H=Math.max(700,window.innerHeight-100);
+  const filteredIds=new Set(filtered.map(n=>n.id));
+  const filteredEdges=E.filter(e=>filteredIds.has(e.from)&&filteredIds.has(e.to));
 
-  gKeys.forEach((gk,gi)=>{
-    const nodes=groups[gk];
-    const ga=(gi/gKeys.length)*Math.PI*2-Math.PI/2;
-    const gcx=cx+Math.cos(ga)*baseR*0.65;
-    const gcy=cy+Math.sin(ga)*baseR*0.65;
-    const count=nodes.length;
-    const subR=Math.min(baseR*0.32,count*18);
-    nodes.forEach((n,ni)=>{
-      const a=(ni/count)*Math.PI*2-Math.PI/2;
-      const r=count<=1?0:subR;
-      positions.set(n.id,{x:gcx+Math.cos(a)*r,y:gcy+Math.sin(a)*r,node:n,gk});
-    });
-  });
+  // Force-directed layout
+  const pos=forceLayout(filtered,filteredEdges,W,H,200);
 
+  // Build group halos
+  const groupNodes={};
+  for(const[id,p] of pos){
+    const n=filtered.find(x=>x.id===id);
+    if(!n)continue;
+    if(!groupNodes[n.group])groupNodes[n.group]=[];
+    groupNodes[n.group].push({x:p.x,y:p.y,id});
+  }
+
+  let haloSvg='';
+  for(const[gk,pts] of Object.entries(groupNodes)){
+    const g=GROUPS[gk];if(!g)continue;
+    const gcx=pts.reduce((a,p)=>a+p.x,0)/pts.length;
+    const gcy=pts.reduce((a,p)=>a+p.y,0)/pts.length;
+    const maxD=Math.max(50,...pts.map(p=>Math.sqrt((p.x-gcx)**2+(p.y-gcy)**2)));
+    haloSvg+=`<circle cx="${gcx}" cy="${gcy}" r="${maxD+45}" fill="${g.color}" fill-opacity="0.03" stroke="${g.color}" stroke-opacity="0.08" stroke-width="1"/>`;
+    haloSvg+=`<text x="${gcx}" y="${gcy-maxD-28}" text-anchor="middle" fill="${g.color}" opacity="0.5" font-size="11" font-weight="600" class="topo-legend">${g.icon} ${g.label}</text>`;
+  }
+
+  // Edges with status colors
   let edgeSvg='';
-  E.forEach(e=>{
-    const f=positions.get(e.from),t=positions.get(e.to);
+  filteredEdges.forEach(e=>{
+    const f=pos.get(e.from),t=pos.get(e.to);
     if(!f||!t)return;
-    const fc=GROUPS[f.gk]?.color||'#888';
+    const col=edgeStatusColor(e);
+    const op=edgeStatusOpacity(e);
     const mx=(f.x+t.x)/2,my=(f.y+t.y)/2;
     const dx=t.x-f.x,dy=t.y-f.y;
-    const nx=-dy*0.06,ny=dx*0.06;
-    const dash=e.type==='planned'?'stroke-dasharray="4 4"':'';
-    edgeSvg+=`<path class="topo-edge" data-from="${e.from}" data-to="${e.to}" d="M${f.x},${f.y} Q${mx+nx},${my+ny} ${t.x},${t.y}" stroke="${fc}" ${dash}/>`;
+    const nx=-dy*0.08,ny=dx*0.08;
+    const dash=e.type==='planned'?'stroke-dasharray="5 4"':'';
+    edgeSvg+=`<path class="topo-edge" data-from="${e.from}" data-to="${e.to}" d="M${f.x},${f.y} Q${mx+nx},${my+ny} ${t.x},${t.y}" stroke="${col}" stroke-width="1.2" opacity="${op}" ${dash}/>`;
   });
 
+  // Nodes as circles
   let nodeSvg='';
-  const groupCenters={};
-  for(const[id,pos] of positions){
-    if(!groupCenters[pos.gk])groupCenters[pos.gk]={xs:[],ys:[]};
-    groupCenters[pos.gk].xs.push(pos.x);
-    groupCenters[pos.gk].ys.push(pos.y);
-  }
-  for(const[gk,c] of Object.entries(groupCenters)){
-    const gcx=c.xs.reduce((a,b)=>a+b,0)/c.xs.length;
-    const gcy=c.ys.reduce((a,b)=>a+b,0)/c.ys.length;
-    const maxD=Math.max(60,...c.xs.map(x=>Math.abs(x-gcx)),...c.ys.map(y=>Math.abs(y-gcy)));
-    const g=GROUPS[gk];
-    nodeSvg+=`<text x="${gcx}" y="${gcy-maxD-14}" text-anchor="middle" fill="${g.color}" opacity="0.4" font-size="10" font-weight="600">${g.label}</text>`;
-    nodeSvg+=`<circle cx="${gcx}" cy="${gcy}" r="${maxD+30}" fill="none" stroke="${g.color}" stroke-opacity="0.06" stroke-width="1"/>`;
-  }
-  for(const[id,pos] of positions){
-    const n=pos.node;
-    const g=GROUPS[n.group];
+  for(const[id,p] of pos){
+    const n=filtered.find(x=>x.id===id);if(!n)continue;
+    const g=GROUPS[n.group]||{color:'#888'};
     const sc=statusColorHex(n.status);
-    const rx=nodeW/2,ry=nodeH/2;
+    const r=n.type==='Cloud Run'?18:14;
     nodeSvg+=`
-      <g class="topo-node" data-id="${n.id}" transform="translate(${pos.x-rx},${pos.y-ry})">
-        <rect width="${nodeW}" height="${nodeH}" rx="8" fill="#12141e" stroke="${g.color}" stroke-opacity="0.3" stroke-width="1"/>
-        <text x="28" y="18" fill="#e8e6e1" font-size="10" font-weight="600" font-family="-apple-system,system-ui,sans-serif">${truncate(n.label,14)}</text>
-        <text x="28" y="30" fill="${g.color}" font-size="8" opacity="0.6" font-family="-apple-system,system-ui,sans-serif">${n.type}</text>
-        <text x="14" y="26" text-anchor="middle" font-size="13">${n.icon}</text>
-        <circle cx="${nodeW-8}" cy="8" r="3.5" fill="${sc}"/>
+      <g class="topo-node" data-id="${n.id}" transform="translate(${p.x},${p.y})">
+        <circle r="${r+4}" fill="${sc}" opacity="0.08"/>
+        <circle r="${r}" fill="#12141e" stroke="${g.color}" stroke-width="1.5" stroke-opacity="0.6"/>
+        <circle r="${r}" fill="${g.color}" fill-opacity="0.08"/>
+        <text y="1" text-anchor="middle" font-size="${r>14?14:12}" dominant-baseline="central">${n.icon}</text>
+        <circle cx="${r-2}" cy="${-r+2}" r="4" fill="${sc}" stroke="#12141e" stroke-width="1.5"/>
+        <text y="${r+14}" text-anchor="middle" fill="${g.color}" font-size="9" font-weight="500" class="topo-legend">${truncate(n.label,16)}</text>
       </g>
     `;
   }
 
+  // Legend
+  const legendY=H-35;
+  const legendSvg=`
+    <g class="topo-legend" transform="translate(16,${legendY})">
+      <rect x="-6" y="-12" width="340" height="28" rx="6" fill="#12141e" opacity="0.8"/>
+      <circle cx="8" cy="2" r="4" fill="#22c55e"/><text x="18" y="6" fill="#9b9a95" font-size="9">정상</text>
+      <circle cx="58" cy="2" r="4" fill="#eab308"/><text x="68" y="6" fill="#9b9a95" font-size="9">주의</text>
+      <circle cx="108" cy="2" r="4" fill="#ef4444"/><text x="118" y="6" fill="#9b9a95" font-size="9">오류</text>
+      <circle cx="158" cy="2" r="4" fill="#3b82f6"/><text x="168" y="6" fill="#9b9a95" font-size="9">예정</text>
+      <line x1="210" y1="-4" x2="240" y2="-4" stroke="#22c55e" stroke-width="1.5" opacity="0.5"/><text x="246" y="0" fill="#9b9a95" font-size="9">연결</text>
+      <line x1="275" y1="-4" x2="305" y2="-4" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.4"/><text x="311" y="0" fill="#9b9a95" font-size="9">예정</text>
+    </g>
+  `;
+
   main.innerHTML=`
-    <div class="topo-view">
-      <svg class="topo-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        ${edgeSvg}${nodeSvg}
+    <div class="topo-view" style="height:${H}px">
+      <svg class="topo-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="height:${H}px">
+        ${haloSvg}${edgeSvg}${nodeSvg}${legendSvg}
       </svg>
     </div>
   `;
 
+  // Interactions
   document.querySelectorAll('.topo-node').forEach(el=>{
     el.addEventListener('mouseenter',()=>{
       const id=el.dataset.id;
       document.querySelectorAll('.topo-edge').forEach(e=>{
-        if(e.dataset.from===id||e.dataset.to===id)e.classList.add('highlight');
-        else e.style.opacity='0.04';
+        if(e.dataset.from===id||e.dataset.to===id){
+          e.classList.add('highlight');
+          e.style.opacity='0.85';
+        }else{
+          e.style.opacity='0.04';
+        }
       });
       document.querySelectorAll('.topo-node').forEach(n=>{
         if(n.dataset.id===id)return;
         const connected=E.some(e=>(e.from===id&&e.to===n.dataset.id)||(e.to===id&&e.from===n.dataset.id));
-        if(!connected)n.style.opacity='0.2';
+        if(!connected)n.style.opacity='0.15';
       });
     });
     el.addEventListener('mouseleave',()=>{
