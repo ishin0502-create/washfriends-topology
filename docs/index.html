@@ -431,6 +431,10 @@ document.querySelector('.sb-item[data-group="all"]').onclick=()=>{activeGroup='a
 // ═══════════════════════════════════════════════════════════════════════
 function renderCards(){
   const main=document.getElementById('main');
+  // Restore main styles overridden by graph view
+  main.style.padding='';
+  main.style.gap='';
+  main.style.overflow='';
   main.innerHTML='';
 
   // Live banner
@@ -636,9 +640,16 @@ function forceLayout(nodes,edges,W,H,iterations){
 
 function renderTopology(){
   const main=document.getElementById('main');
+  // Remove card-view padding/gap so graph fills the full area
+  main.style.padding='0';
+  main.style.gap='0';
+  main.style.overflow='hidden';
   const filtered=getFilteredNodes();
-  const W=Math.max(1200,main.clientWidth-48);
-  const H=Math.max(900,main.clientHeight-48);
+  // Virtual layout space — SVG viewBox auto-scales this to fit any screen
+  const VW=1400;
+  const VH=1000;
+  const W=VW;
+  const H=VH;
   const filteredIds=new Set(filtered.map(n=>n.id));
   const filteredEdges=E.filter(e=>filteredIds.has(e.from)&&filteredIds.has(e.to));
 
@@ -711,8 +722,9 @@ function renderTopology(){
   `;
 
   main.innerHTML=`
-    <div class="topo-view" style="height:${H}px">
-      <svg class="topo-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="height:${H}px">
+    <div class="topo-view" style="width:100%;height:calc(100vh - 52px);overflow:hidden">
+      <svg class="topo-svg" viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="xMidYMid meet"
+           xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
         ${haloSvg}${edgeSvg}${nodeSvg}${legendSvg}
       </svg>
     </div>
