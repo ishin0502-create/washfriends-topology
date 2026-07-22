@@ -544,19 +544,19 @@ function edgeStatusOpacity(e){
 }
 
 function forceLayout(nodes,edges,W,H,iterations){
-  // Initialize positions in group clusters
   const groups={};
   nodes.forEach(n=>{if(!groups[n.group])groups[n.group]=[];groups[n.group].push(n)});
   const gKeys=Object.keys(groups);
-  const cx=W/2,cy=H/2,baseR=Math.min(W,H)*0.34;
+  const cx=W/2,cy=H/2,baseR=Math.min(W,H)*0.38;
   const pos=new Map();
 
+  // Initialize in widely-spaced group arcs
   gKeys.forEach((gk,gi)=>{
     const ga=(gi/gKeys.length)*Math.PI*2-Math.PI/2;
     const gcx=cx+Math.cos(ga)*baseR;
     const gcy=cy+Math.sin(ga)*baseR;
     const ns=groups[gk];
-    const subR=Math.min(baseR*0.28,ns.length*16);
+    const subR=Math.min(baseR*0.35,ns.length*22);
     ns.forEach((n,ni)=>{
       const a=(ni/ns.length)*Math.PI*2-Math.PI/2;
       const r=ns.length<=1?0:subR;
@@ -564,13 +564,14 @@ function forceLayout(nodes,edges,W,H,iterations){
     });
   });
 
-  // Simple force simulation
-  const PAD=40;
+  const PAD=60;
+  const minDist=70; // minimum distance between nodes
+
   for(let iter=0;iter<iterations;iter++){
-    const alpha=1-iter/iterations;
-    const repulse=800*alpha;
-    const attract=0.008*alpha;
-    const groupPull=0.03*alpha;
+    const alpha=Math.max(0.01,1-iter/iterations);
+    const repulse=2500*alpha;
+    const attract=0.004*alpha;
+    const groupPull=0.025*alpha;
 
     // Group center gravity
     for(const[gk,ns] of Object.entries(groups)){
@@ -584,44 +585,46 @@ function forceLayout(nodes,edges,W,H,iterations){
       });
     }
 
-    // Repulsion between all nodes
+    // Strong repulsion
     const nArr=[...pos.entries()];
     for(let i=0;i<nArr.length;i++){
       for(let j=i+1;j<nArr.length;j++){
         const [,a]=nArr[i],[,b]=nArr[j];
         let dx=b.x-a.x,dy=b.y-a.y;
         let d2=dx*dx+dy*dy;
-        if(d2<1)d2=1;
+        if(d2<4)d2=4;
         const d=Math.sqrt(d2);
-        const f=repulse/d2;
+        // Extra push when too close
+        let f=repulse/d2;
+        if(d<minDist) f+=((minDist-d)/minDist)*40*alpha;
         const fx=dx/d*f,fy=dy/d*f;
         a.vx-=fx;a.vy-=fy;
         b.vx+=fx;b.vy+=fy;
       }
     }
 
-    // Edge attraction
+    // Edge springs (longer rest length)
     edges.forEach(e=>{
       const a=pos.get(e.from),b=pos.get(e.to);
       if(!a||!b)return;
       const dx=b.x-a.x,dy=b.y-a.y;
       const d=Math.sqrt(dx*dx+dy*dy)||1;
-      const ideal=120;
+      const ideal=160;
       const f=(d-ideal)*attract;
       const fx=dx/d*f,fy=dy/d*f;
       a.vx+=fx;a.vy+=fy;
       b.vx-=fx;b.vy-=fy;
     });
 
-    // Center gravity
+    // Gentle center gravity
     for(const[,p] of pos){
-      p.vx+=(cx-p.x)*0.002*alpha;
-      p.vy+=(cy-p.y)*0.002*alpha;
+      p.vx+=(cx-p.x)*0.001*alpha;
+      p.vy+=(cy-p.y)*0.001*alpha;
     }
 
-    // Apply velocity with damping
+    // Apply velocity
     for(const[,p] of pos){
-      p.vx*=0.6;p.vy*=0.6;
+      p.vx*=0.55;p.vy*=0.55;
       p.x+=p.vx;p.y+=p.vy;
       p.x=Math.max(PAD,Math.min(W-PAD,p.x));
       p.y=Math.max(PAD,Math.min(H-PAD,p.y));
@@ -633,8 +636,8 @@ function forceLayout(nodes,edges,W,H,iterations){
 function renderTopology(){
   const main=document.getElementById('main');
   const filtered=getFilteredNodes();
-  const W=main.clientWidth-48;
-  const H=Math.max(700,window.innerHeight-100);
+  const W=Math.max(1200,main.clientWidth-24);
+  const H=Math.max(900,window.innerHeight-80);
   const filteredIds=new Set(filtered.map(n=>n.id));
   const filteredEdges=E.filter(e=>filteredIds.has(e.from)&&filteredIds.has(e.to));
 
@@ -680,15 +683,14 @@ function renderTopology(){
     const n=filtered.find(x=>x.id===id);if(!n)continue;
     const g=GROUPS[n.group]||{color:'#888'};
     const sc=statusColorHex(n.status);
-    const r=n.type==='Cloud Run'?18:14;
+    const isBackend=n.type==='Cloud Run';
+    const r=isBackend?16:12;
     nodeSvg+=`
       <g class="topo-node" data-id="${n.id}" transform="translate(${p.x},${p.y})">
-        <circle r="${r+4}" fill="${sc}" opacity="0.08"/>
-        <circle r="${r}" fill="#12141e" stroke="${g.color}" stroke-width="1.5" stroke-opacity="0.6"/>
-        <circle r="${r}" fill="${g.color}" fill-opacity="0.08"/>
-        <text y="1" text-anchor="middle" font-size="${r>14?14:12}" dominant-baseline="central">${n.icon}</text>
-        <circle cx="${r-2}" cy="${-r+2}" r="4" fill="${sc}" stroke="#12141e" stroke-width="1.5"/>
-        <text y="${r+14}" text-anchor="middle" fill="${g.color}" font-size="9" font-weight="500" class="topo-legend">${truncate(n.label,16)}</text>
+        <circle r="${r+6}" fill="${sc}" opacity="0.06"/>
+        <circle r="${r}" fill="#0f1118" stroke="${sc}" stroke-width="2"/>
+        <text y="1" text-anchor="middle" font-size="${isBackend?13:11}" dominant-baseline="central">${n.icon}</text>
+        <text y="${r+12}" text-anchor="middle" fill="#c8c6c0" font-size="8" font-weight="500" class="topo-legend">${truncate(n.label,14)}</text>
       </g>
     `;
   }
