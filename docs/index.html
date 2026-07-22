@@ -16,7 +16,8 @@
   --critical-bg:rgba(239,68,68,0.08);--info-bg:rgba(59,130,246,0.08);
   --radius:10px;--radius-sm:6px;
 }
-body{font-family:-apple-system,'Pretendard',system-ui,'Segoe UI',sans-serif;background:var(--bg);color:var(--text-1);min-height:100vh;display:flex;flex-direction:column;overflow:hidden}
+html,body{height:100%}
+body{font-family:-apple-system,'Pretendard',system-ui,'Segoe UI',sans-serif;background:var(--bg);color:var(--text-1);height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
 /* ── HEADER ── */
 .hdr{height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0;background:var(--surface)}
@@ -636,8 +637,8 @@ function forceLayout(nodes,edges,W,H,iterations){
 function renderTopology(){
   const main=document.getElementById('main');
   const filtered=getFilteredNodes();
-  const W=Math.max(1200,main.clientWidth-24);
-  const H=Math.max(900,window.innerHeight-80);
+  const W=Math.max(1200,main.clientWidth-48);
+  const H=Math.max(900,main.clientHeight-48);
   const filteredIds=new Set(filtered.map(n=>n.id));
   const filteredEdges=E.filter(e=>filteredIds.has(e.from)&&filteredIds.has(e.to));
 
