@@ -1,0 +1,82 @@
+name: Topology Health Check
+
+on:
+  schedule:
+    # 매일 01:00 UTC = 08:00 ICT (베트남 시간)
+    - cron: '0 1 * * *'
+  workflow_dispatch: # 수동 실행 가능
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run health checks
+        run: |
+          echo '{}' > /tmp/status.json
+
+          # 체크할 서비스 목록 (id|url|name)
+          SERVICES=(
+            "mkt-backend|https://global-washfriends-185931998309.asia-southeast1.run.app|global-washfriends"
+            "roi-backend|https://www.washfriendsglobal.com|washfriends-website"
+            "sns-backend|https://washfriends-api-185931998309.asia-southeast1.run.app|washfriends-backend"
+            "kiosk-backend|https://washfriends-kiosk-api-185931998309.asia-southeast1.run.app|kiosk-backend"
+            "sns-frontend|https://washfriends-order.web.app|SNS 주문 폼"
+            "kiosk-frontend|https://gen-lang-client-0699748870.web.app|키오스크 PWA"
+            "samsung-web|https://www.samsung-laundry.com|samsung-laundry.com"
+          )
+
+          RESULTS="{"
+          FIRST=true
+          CHECKED=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          for svc in "${SERVICES[@]}"; do
+            IFS='|' read -r id url name <<< "$svc"
+
+            # HTTP 상태 코드 + 응답 시간 체크
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || echo "000")
+            RESPONSE_TIME=$(curl -s -o /dev/null -w "%{time_total}" --max-time 10 "$url" 2>/dev/null || echo "0")
+
+            # 상태 판별
+            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 400 ]; then
+              STATUS="good"
+            elif [ "$HTTP_CODE" -ge 400 ] && [ "$HTTP_CODE" -lt 500 ]; then
+              STATUS="warning"
+            elif [ "$HTTP_CODE" = "000" ]; then
+              STATUS="critical"
+            else
+              STATUS="serious"
+            fi
+
+            # JSON 조립
+            if [ "$FIRST" = true ]; then
+              FIRST=false
+            else
+              RESULTS+=","
+            fi
+            RESULTS+="\"$id\":{\"status\":\"$STATUS\",\"http\":$HTTP_CODE,\"responseMs\":$(echo "$RESPONSE_TIME * 1000" | bc | cut -d. -f1),\"name\":\"$name\",\"url\":\"$url\"}"
+
+            echo "✓ $name ($url) → HTTP $HTTP_CODE ($STATUS) ${RESPONSE_TIME}s"
+          done
+
+          RESULTS+=",\"_meta\":{\"checked\":\"$CHECKED\",\"runner\":\"github-actions\"}}"
+
+          echo "$RESULTS" | python3 -m json.tool > docs/status.json
+          echo ""
+          echo "=== status.json ==="
+          cat docs/status.json
+
+      - name: Commit and push status
+        run: |
+          git config user.name "WashFriends Bot"
+          git config user.email "bot@washfriends.com"
+          git add docs/status.json
+          # 변경사항이 있을 때만 커밋
+          git diff --cached --quiet || git commit -m "chore: update topology health status [skip ci]"
+          git push
