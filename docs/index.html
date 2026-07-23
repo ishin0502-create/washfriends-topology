@@ -357,6 +357,9 @@ const E=[
 let liveStatus={};
 let lastChecked=null;
 
+let tokenHealth={};
+let dispatchWorkerOk=null;
+
 async function fetchStatus(){
   try{
     const res=await fetch('status.json?t='+Date.now());
@@ -366,6 +369,26 @@ async function fetchStatus(){
       lastChecked=data._meta.checked;
       delete data._meta;
     }
+    // Extract token_health
+    if(data.token_health){
+      tokenHealth=data.token_health;
+      delete data.token_health;
+      // Apply token health to nodes
+      for(const[tid,th] of Object.entries(tokenHealth)){
+        const node=N.find(n=>n.id===tid);
+        if(node){
+          if(th.cls==='crit'){node.status='critical';}
+          else if(th.cls==='warn'){node.status='warning';}
+          node._reason=th.reason||th.note||'';
+          node._action=th.action||'';
+        }
+      }
+    }
+    // Extract dispatch_worker_ok
+    if(data.dispatch_worker_ok!==undefined){
+      dispatchWorkerOk=data.dispatch_worker_ok;
+      delete data.dispatch_worker_ok;
+    }
     liveStatus=data;
     // Update node statuses from live data
     for(const[id,s] of Object.entries(liveStatus)){
@@ -373,11 +396,28 @@ async function fetchStatus(){
       if(node && node.status!=='planned'){
         node.status=s.status;
         node._live={http:s.http,responseMs:s.responseMs,url:s.url};
+        node._reason=s.reason||'';
+        node._action=s.action||'';
+        if(s.sslDaysLeft!==undefined) node._sslDays=s.sslDaysLeft;
       }
     }
+    // Hardcoded reasons for non-live nodes
+    const hardcoded={
+      'kiosk-payment':{r:'SePay 결제 연동 테스트 완료, 법인계좌+전자계약서 미제출 상태.',a:'사업자등록증, 법인계좌, 전자계약서 제출 후 본 계정 전환.'},
+      'meta-api':{r:'Meta Marketing API Standard Access 인증 대기 중.',a:'Facebook 비즈니스 인증 완료 후 Standard Access 신청.'},
+      'google-ws':{r:'Google Workspace 결제 거절 상태. 이메일 서비스 중단 가능.',a:'Google Admin에서 결제 수단 업데이트.'},
+      'sepay':{r:'SePay 결제 게이트웨이 테스트 완료. 법인계좌+전자계약서 제출 대기.',a:'법인계좌 연결 및 전자계약서 제출.'},
+    };
+    for(const[nid,hc] of Object.entries(hardcoded)){
+      const node=N.find(n=>n.id===nid);
+      if(node && !node._reason){node._reason=hc.r; node._action=hc.a;}
+    }
+    // Planned nodes
+    N.filter(n=>n.status==='planned').forEach(n=>{
+      if(!n._reason){n._reason='구축 예정 기능입니다. 아직 배포되지 않았습니다.'; n._action='개발 일정 확인 후 배포 진행.';}
+    });
     updateAll();
   }catch(e){
-    // status.json not available yet — use defaults
     console.log('Status check: using defaults (status.json not found)');
   }
 }
@@ -890,6 +930,36 @@ function openDetail(node){
   }
   html+=`</div>`;
 
+  // ★ 진단 원인 (Diagnostic Reason)
+  if(node._reason){
+    const borderColor=node.status==='good'?'var(--good)':node.status==='warning'?'var(--warn)':'var(--critical)';
+    html+=`<div class="detail-section"><h3>진단 원인</h3>
+      <div style="padding:10px 14px;background:var(--surface-2);border-left:3px solid ${borderColor};border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:12px;line-height:1.6;color:var(--text-1)">
+        ${node._reason}
+      </div>
+    </div>`;
+  }
+
+  // ★ 권장 조치 (Recommended Action)
+  if(node._action && node._action!=='조치 불필요.'){
+    html+=`<div class="detail-section"><h3>권장 조치</h3>
+      <div style="padding:10px 14px;background:rgba(234,179,8,0.06);border-left:3px solid var(--warn);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:12px;line-height:1.6;color:var(--text-1)">
+        ${node._action}
+      </div>
+    </div>`;
+  }
+
+  // ★ SSL 인증서
+  if(node._sslDays!==undefined && node._sslDays!==null){
+    const sslColor=node._sslDays<7?'var(--critical)':node._sslDays<30?'var(--warn)':'var(--good)';
+    html+=`<div class="detail-section"><h3>SSL 인증서</h3>
+      <div style="padding:8px 14px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:12px;display:flex;align-items:center;gap:8px">
+        <div style="width:7px;height:7px;border-radius:50%;background:${sslColor}"></div>
+        <span style="color:${sslColor};font-weight:600">${node._sslDays}일 남음</span>
+      </div>
+    </div>`;
+  }
+
   html+=`<div class="detail-section"><h3>Group</h3>
     <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${g.bg};border:1px solid ${g.border};border-radius:var(--radius-sm);font-size:12px">
       <span>${g.icon}</span><span style="color:${g.color};font-weight:500">${g.label}</span>
@@ -913,7 +983,7 @@ function openDetail(node){
       const oid=c.from===node.id?c.to:c.from;
       const o=N.find(n=>n.id===oid);
       if(!o)return;
-      const dir=c.from===node.id?'→':'←';
+      const dir=c.from===node.id?'\u2192':'\u2190';
       const osc=statusColorHex(o.status);
       html+=`<div class="detail-conn" onclick="openDetail(N.find(n=>n.id==='${oid}'))">
         <div class="dot" style="background:${osc}"></div><span>${o.label}</span><span class="arrow">${dir} ${c.label||o.type}</span>
@@ -961,7 +1031,7 @@ function updateAll(){
   updateSidebarActive();
   updateStats();
   if(lastChecked){
-    document.getElementById('sb-footer').innerHTML=`Last check<br>${lastChecked?new Date(lastChecked).toLocaleString('ko-KR',{timeZone:'Asia/Bangkok',hour12:false}):'—'} ICT<br><a href="https://github.com/ishin0502-create/washfriends-marketing/actions" target="_blank">Actions Log →</a>`;
+    document.getElementById('sb-footer').innerHTML=`Last check<br>${lastChecked?new Date(lastChecked).toLocaleString('ko-KR',{timeZone:'Asia/Bangkok',hour12:false}):'—'} ICT<br><a href="https://github.com/ishin0502-create/washfriends-topology/actions" target="_blank">Actions Log →</a>`;
   }
   render();
 }
