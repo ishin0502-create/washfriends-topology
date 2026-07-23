@@ -1,55 +1,103 @@
 {
-    "mkt-backend": {
-        "status": "warning",
-        "http": 404,
-        "responseMs": 225,
-        "name": "global-washfriends",
-        "url": "https://global-washfriends-185931998309.asia-southeast1.run.app"
+  "mkt-backend": {
+    "status": "good",
+    "http": 200,
+    "responseMs": 411,
+    "name": "global-washfriends",
+    "url": "https://global-washfriends-e2d4sutvaq-as.a.run.app/health",
+    "reason": "HTTP 200, 응답 411ms. 정상 작동 중.",
+    "action": "조치 불필요.",
+    "sslDaysLeft": 59
+  },
+  "roi-backend": {
+    "status": "good",
+    "http": 200,
+    "responseMs": 4106,
+    "name": "washfriends-website",
+    "url": "https://www.washfriendsglobal.com",
+    "reason": "HTTP 200 정상이지만 응답 4106ms로 매우 느림.",
+    "action": "Cold start 또는 리소스 부족. Cloud Run 인스턴스 min-instances 설정 검토.",
+    "sslDaysLeft": 43
+  },
+  "sns-backend": {
+    "status": "warning",
+    "http": 404,
+    "responseMs": 10900,
+    "name": "washfriends-backend",
+    "url": "https://washfriends-api-185931998309.asia-southeast1.run.app",
+    "reason": "HTTP 404: 요청 경로를 찾을 수 없음. 서비스 루트 또는 health 엔드포인트 미구현.",
+    "action": "서비스 배포 상태 확인. 루트(/) 또는 /health 엔드포인트 존재 여부 확인.",
+    "sslDaysLeft": 59
+  },
+  "kiosk-backend": {
+    "status": "warning",
+    "http": 404,
+    "responseMs": 2763,
+    "name": "kiosk-backend",
+    "url": "https://washfriends-kiosk-api-185931998309.asia-southeast1.run.app",
+    "reason": "HTTP 404: 요청 경로를 찾을 수 없음. 서비스 루트 또는 health 엔드포인트 미구현.",
+    "action": "서비스 배포 상태 확인. 루트(/) 또는 /health 엔드포인트 존재 여부 확인.",
+    "sslDaysLeft": 59
+  },
+  "sns-frontend": {
+    "status": "good",
+    "http": 200,
+    "responseMs": 153,
+    "name": "SNS 주문 폼",
+    "url": "https://washfriends-order.web.app",
+    "reason": "HTTP 200, 응답 153ms. 정상 작동 중.",
+    "action": "조치 불필요.",
+    "sslDaysLeft": 86
+  },
+  "kiosk-frontend": {
+    "status": "good",
+    "http": 200,
+    "responseMs": 92,
+    "name": "키오스크 PWA",
+    "url": "https://gen-lang-client-0699748870.web.app",
+    "reason": "HTTP 200, 응답 92ms. 정상 작동 중.",
+    "action": "조치 불필요.",
+    "sslDaysLeft": 86
+  },
+  "samsung-web": {
+    "status": "good",
+    "http": 200,
+    "responseMs": 1437,
+    "name": "samsung-laundry.com",
+    "url": "https://www.samsung-laundry.com",
+    "reason": "HTTP 200, 응답 1437ms. 정상 작동 중.",
+    "action": "조치 불필요.",
+    "sslDaysLeft": 88
+  },
+  "token_health": {
+    "fb-page-a": {
+      "label": "FB Page A 토큰",
+      "daysLeft": null,
+      "cls": "ok",
+      "note": "영구 토큰",
+      "reason": "Page Access Token은 만료되지 않는 영구 토큰입니다.",
+      "action": "조치 불필요."
     },
-    "roi-backend": {
-        "status": "good",
-        "http": 200,
-        "responseMs": 242,
-        "name": "washfriends-website",
-        "url": "https://www.washfriendsglobal.com"
+    "fb-page-b": {
+      "label": "FB Page B 토큰",
+      "daysLeft": null,
+      "cls": "ok",
+      "note": "영구 토큰",
+      "reason": "Page Access Token은 만료되지 않는 영구 토큰입니다.",
+      "action": "조치 불필요."
     },
-    "sns-backend": {
-        "status": "warning",
-        "http": 404,
-        "responseMs": 209,
-        "name": "washfriends-backend",
-        "url": "https://washfriends-api-185931998309.asia-southeast1.run.app"
-    },
-    "kiosk-backend": {
-        "status": "warning",
-        "http": 404,
-        "responseMs": 240,
-        "name": "kiosk-backend",
-        "url": "https://washfriends-kiosk-api-185931998309.asia-southeast1.run.app"
-    },
-    "sns-frontend": {
-        "status": "good",
-        "http": 200,
-        "responseMs": 35,
-        "name": "SNS \uc8fc\ubb38 \ud3fc",
-        "url": "https://washfriends-order.web.app"
-    },
-    "kiosk-frontend": {
-        "status": "good",
-        "http": 200,
-        "responseMs": 37,
-        "name": "\ud0a4\uc624\uc2a4\ud06c PWA",
-        "url": "https://gen-lang-client-0699748870.web.app"
-    },
-    "samsung-web": {
-        "status": "good",
-        "http": 200,
-        "responseMs": 1195,
-        "name": "samsung-laundry.com",
-        "url": "https://www.samsung-laundry.com"
-    },
-    "_meta": {
-        "checked": "2026-07-23T04:16:15Z",
-        "runner": "github-actions"
+    "zalo-oa": {
+      "label": "Zalo OA 토큰",
+      "daysLeft": 60,
+      "cls": "ok",
+      "note": "60일 남음",
+      "reason": "Zalo OA 토큰은 자동 갱신 스케줄러(07:00 daily)로 관리됩니다.",
+      "action": "ZaloTokenRefresh 스케줄러 작동 확인."
     }
+  },
+  "dispatch_worker_ok": true,
+  "_meta": {
+    "checked": "2026-07-23T16:46:32Z",
+    "runner": "github-actions"
+  }
 }
