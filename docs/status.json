@@ -2,70 +2,70 @@
   "mkt-backend": {
     "status": "good",
     "http": 200,
-    "responseMs": 411,
+    "responseMs": 243,
     "name": "global-washfriends",
     "url": "https://global-washfriends-e2d4sutvaq-as.a.run.app/health",
-    "reason": "HTTP 200, 응답 411ms. 정상 작동 중.",
+    "reason": "HTTP 200, 응답 243ms. 정상 작동 중.",
     "action": "조치 불필요.",
     "sslDaysLeft": 59
   },
   "roi-backend": {
     "status": "good",
     "http": 200,
-    "responseMs": 4106,
+    "responseMs": 398,
     "name": "washfriends-website",
     "url": "https://www.washfriendsglobal.com",
-    "reason": "HTTP 200 정상이지만 응답 4106ms로 매우 느림.",
-    "action": "Cold start 또는 리소스 부족. Cloud Run 인스턴스 min-instances 설정 검토.",
+    "reason": "HTTP 200, 응답 398ms. 정상 작동 중.",
+    "action": "조치 불필요.",
     "sslDaysLeft": 43
   },
   "sns-backend": {
-    "status": "warning",
-    "http": 404,
-    "responseMs": 10900,
+    "status": "good",
+    "http": 200,
+    "responseMs": 257,
     "name": "washfriends-backend",
-    "url": "https://washfriends-api-185931998309.asia-southeast1.run.app",
-    "reason": "HTTP 404: 요청 경로를 찾을 수 없음. 서비스 루트 또는 health 엔드포인트 미구현.",
-    "action": "서비스 배포 상태 확인. 루트(/) 또는 /health 엔드포인트 존재 여부 확인.",
+    "url": "https://washfriends-api-185931998309.asia-southeast1.run.app/docs",
+    "reason": "HTTP 200, 응답 257ms. 정상 작동 중.",
+    "action": "조치 불필요.",
     "sslDaysLeft": 59
   },
   "kiosk-backend": {
-    "status": "warning",
-    "http": 404,
-    "responseMs": 2763,
+    "status": "good",
+    "http": 200,
+    "responseMs": 247,
     "name": "kiosk-backend",
-    "url": "https://washfriends-kiosk-api-185931998309.asia-southeast1.run.app",
-    "reason": "HTTP 404: 요청 경로를 찾을 수 없음. 서비스 루트 또는 health 엔드포인트 미구현.",
-    "action": "서비스 배포 상태 확인. 루트(/) 또는 /health 엔드포인트 존재 여부 확인.",
+    "url": "https://washfriends-kiosk-api-185931998309.asia-southeast1.run.app/docs",
+    "reason": "HTTP 200, 응답 247ms. 정상 작동 중.",
+    "action": "조치 불필요.",
     "sslDaysLeft": 59
   },
   "sns-frontend": {
     "status": "good",
     "http": 200,
-    "responseMs": 153,
+    "responseMs": 538,
     "name": "SNS 주문 폼",
     "url": "https://washfriends-order.web.app",
-    "reason": "HTTP 200, 응답 153ms. 정상 작동 중.",
+    "reason": "HTTP 200, 응답 538ms. 정상 작동 중.",
     "action": "조치 불필요.",
     "sslDaysLeft": 86
   },
   "kiosk-frontend": {
     "status": "good",
     "http": 200,
-    "responseMs": 92,
+    "responseMs": 80,
     "name": "키오스크 PWA",
     "url": "https://gen-lang-client-0699748870.web.app",
-    "reason": "HTTP 200, 응답 92ms. 정상 작동 중.",
+    "reason": "HTTP 200, 응답 80ms. 정상 작동 중.",
     "action": "조치 불필요.",
     "sslDaysLeft": 86
   },
   "samsung-web": {
     "status": "good",
     "http": 200,
-    "responseMs": 1437,
+    "responseMs": 1124,
     "name": "samsung-laundry.com",
     "url": "https://www.samsung-laundry.com",
-    "reason": "HTTP 200, 응답 1437ms. 정상 작동 중.",
+    "reason": "HTTP 200, 응답 1124ms. 정상 작동 중.",
     "action": "조치 불필요.",
     "sslDaysLeft": 88
   },
@@ -97,7 +97,7 @@
   },
   "dispatch_worker_ok": true,
   "_meta": {
-    "checked": "2026-07-23T16:46:32Z",
+    "checked": "2026-07-23T17:00:55Z",
     "runner": "github-actions"
   }
 }
