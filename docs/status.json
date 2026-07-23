@@ -1,6 +1,55 @@
 {
-  "_meta": {
-    "checked": "2026-07-22T01:00:00Z",
-    "runner": "initial"
-  }
+    "mkt-backend": {
+        "status": "warning",
+        "http": 404,
+        "responseMs": 225,
+        "name": "global-washfriends",
+        "url": "https://global-washfriends-185931998309.asia-southeast1.run.app"
+    },
+    "roi-backend": {
+        "status": "good",
+        "http": 200,
+        "responseMs": 242,
+        "name": "washfriends-website",
+        "url": "https://www.washfriendsglobal.com"
+    },
+    "sns-backend": {
+        "status": "warning",
+        "http": 404,
+        "responseMs": 209,
+        "name": "washfriends-backend",
+        "url": "https://washfriends-api-185931998309.asia-southeast1.run.app"
+    },
+    "kiosk-backend": {
+        "status": "warning",
+        "http": 404,
+        "responseMs": 240,
+        "name": "kiosk-backend",
+        "url": "https://washfriends-kiosk-api-185931998309.asia-southeast1.run.app"
+    },
+    "sns-frontend": {
+        "status": "good",
+        "http": 200,
+        "responseMs": 35,
+        "name": "SNS \uc8fc\ubb38 \ud3fc",
+        "url": "https://washfriends-order.web.app"
+    },
+    "kiosk-frontend": {
+        "status": "good",
+        "http": 200,
+        "responseMs": 37,
+        "name": "\ud0a4\uc624\uc2a4\ud06c PWA",
+        "url": "https://gen-lang-client-0699748870.web.app"
+    },
+    "samsung-web": {
+        "status": "good",
+        "http": 200,
+        "responseMs": 1195,
+        "name": "samsung-laundry.com",
+        "url": "https://www.samsung-laundry.com"
+    },
+    "_meta": {
+        "checked": "2026-07-23T04:16:15Z",
+        "runner": "github-actions"
+    }
 }
