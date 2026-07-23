@@ -25,8 +25,8 @@ jobs:
           SERVICES = [
               ("mkt-backend",    "${{ env.MKT_URL }}/health",                                                "global-washfriends"),
               ("roi-backend",    "https://www.washfriendsglobal.com",                                        "washfriends-website"),
-              ("sns-backend",    "https://washfriends-api-185931998309.asia-southeast1.run.app/docs",         "washfriends-backend"),
-              ("kiosk-backend",  "https://washfriends-kiosk-api-185931998309.asia-southeast1.run.app/docs",  "kiosk-backend"),
+              ("sns-backend",    "https://washfriends-api-185931998309.asia-southeast1.run.app/health",       "washfriends-backend"),
+              ("kiosk-backend",  "https://washfriends-kiosk-api-185931998309.asia-southeast1.run.app/health","kiosk-backend"),
               ("sns-frontend",   "https://washfriends-order.web.app",                                        "SNS 주문 폼"),
               ("kiosk-frontend", "https://gen-lang-client-0699748870.web.app",                               "키오스크 PWA"),
               ("samsung-web",    "https://www.samsung-laundry.com",                                          "samsung-laundry.com"),
