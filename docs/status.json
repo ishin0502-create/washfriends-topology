@@ -2,72 +2,72 @@
   "mkt-backend": {
     "status": "good",
     "http": 200,
-    "responseMs": 279,
+    "responseMs": 300,
     "name": "global-washfriends",
     "url": "https://global-washfriends-e2d4sutvaq-as.a.run.app/health",
-    "reason": "HTTP 200, 응답 279ms. 정상 작동 중.",
+    "reason": "HTTP 200, 응답 300ms. 정상 작동 중.",
     "action": "조치 불필요.",
-    "sslDaysLeft": 56
+    "sslDaysLeft": 55
   },
   "roi-backend": {
     "status": "good",
     "http": 200,
-    "responseMs": 497,
+    "responseMs": 331,
     "name": "washfriends-website",
     "url": "https://www.washfriendsglobal.com",
-    "reason": "HTTP 200, 응답 497ms. 정상 작동 중.",
+    "reason": "HTTP 200, 응답 331ms. 정상 작동 중.",
     "action": "조치 불필요.",
-    "sslDaysLeft": 48
+    "sslDaysLeft": 47
   },
   "sns-backend": {
     "status": "good",
     "http": 200,
-    "responseMs": 347,
+    "responseMs": 278,
     "name": "washfriends-backend",
     "url": "https://washfriends-api-185931998309.asia-southeast1.run.app/health",
-    "reason": "HTTP 200, 응답 347ms. 정상 작동 중.",
+    "reason": "HTTP 200, 응답 278ms. 정상 작동 중.",
     "action": "조치 불필요.",
-    "sslDaysLeft": 56
+    "sslDaysLeft": 55
   },
   "kiosk-backend": {
     "status": "good",
     "http": 200,
-    "responseMs": 309,
+    "responseMs": 257,
     "name": "kiosk-backend",
     "url": "https://washfriends-kiosk-api-185931998309.asia-southeast1.run.app/health",
-    "reason": "HTTP 200, 응답 309ms. 정상 작동 중.",
+    "reason": "HTTP 200, 응답 257ms. 정상 작동 중.",
     "action": "조치 불필요.",
-    "sslDaysLeft": 56
+    "sslDaysLeft": 55
   },
   "sns-frontend": {
     "status": "good",
     "http": 200,
-    "responseMs": 186,
+    "responseMs": 287,
     "name": "SNS 주문 폼",
     "url": "https://washfriends-order.web.app",
-    "reason": "HTTP 200, 응답 186ms. 정상 작동 중.",
+    "reason": "HTTP 200, 응답 287ms. 정상 작동 중.",
     "action": "조치 불필요.",
-    "sslDaysLeft": 82
+    "sslDaysLeft": 81
   },
   "kiosk-frontend": {
     "status": "good",
     "http": 200,
-    "responseMs": 220,
+    "responseMs": 188,
     "name": "키오스크 PWA",
     "url": "https://gen-lang-client-0699748870.web.app",
-    "reason": "HTTP 200, 응답 220ms. 정상 작동 중.",
+    "reason": "HTTP 200, 응답 188ms. 정상 작동 중.",
     "action": "조치 불필요.",
-    "sslDaysLeft": 82
+    "sslDaysLeft": 81
   },
   "samsung-web": {
     "status": "good",
     "http": 200,
-    "responseMs": 1645,
+    "responseMs": 1699,
     "name": "samsung-laundry.com",
     "url": "https://www.samsung-laundry.com",
-    "reason": "HTTP 200 정상. 응답 1645ms로 다소 느림.",
+    "reason": "HTTP 200 정상. 응답 1699ms로 다소 느림.",
     "action": "모니터링 지속. 반복 시 메모리/CPU 할당량 점검.",
-    "sslDaysLeft": 41
+    "sslDaysLeft": 40
   },
   "token_health": {
     "fb-page-a": {
@@ -97,7 +97,7 @@
   },
   "dispatch_worker_ok": true,
   "_meta": {
-    "checked": "2026-11-04T07:18:59Z",
+    "checked": "2026-11-05T07:45:19Z",
     "runner": "github-actions"
   }
 }
